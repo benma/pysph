@@ -1,0 +1,31 @@
+sampler2D texSampler : TEXUNIT0 = sampler_state {
+  magfilter = LINEAR;
+  minfilter = LINEAR;
+  mipfilter = LINEAR;
+  AddressU = clamp;
+  AddressV = clamp;
+};
+
+void passVertex(float4 pos : POSITION, float2 tex : TEXCOORD0, out float4 outPos : POSITION, out float2 outTex: TEXCOORD0) {
+  outPos = pos;
+  outTex = tex;
+}
+
+float blurFragment(float2 uv : TEXCOORD0, uniform float radius, uniform float sigma, uniform float2 direction, uniform float2 texelSize) : COLOR {
+
+  float sum = 0;
+  float wsum = 0;
+  for(int r = -radius; r <= radius; r+=1) {
+    float sample = tex2D(texSampler, uv + (float)r*direction*texelSize).x;
+
+    // spatial domain
+    float v = (float)r/sigma;
+    float w = exp(-v*v/2.);
+    sum += sample * w;
+    wsum += w;
+  }
+  if(wsum > 0.) {
+    sum /= wsum;
+  }
+  return sum;
+}
