@@ -45,3 +45,7 @@ $ python setup.py install --prefix=/path/to/pysph_env/ --optimize=1
 $ source bin/activate
 $ python /path/to/pysph/main.py
 ```
+## Limitations
+
+Screen space rendering rendering is not complete. It is not optimized for speed. 
+Also, the rendering at the boundaries is not properly dealt with yet, you can see the artefacts in the screenshots.
