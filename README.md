@@ -14,7 +14,7 @@ Big thanks to Ian Johnson (enjalot) for the radix/bitonic sort and his excellent
 
 ## Running:
 
-Run with `python main.py`.
+Run with `python main.py [number of particles]`. Start with `python main.py 8000` and slowly scale the number of particles up.
 
 ## Dependencies
 
