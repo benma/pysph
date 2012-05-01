@@ -46,13 +46,19 @@ def create_profile(shader_type):
     context = _create_context()
     if '--cg-glsl' in sys.argv:
         # force glsl profiles
+        # http://http.developer.nvidia.com/Cg/glsl.html
+        # multi-vendor
         profile = { CG_GL_VERTEX: CG_PROFILE_GLSLV,
                     CG_GL_FRAGMENT: CG_PROFILE_GLSLF }[shader_type]
     elif '--cg-arb' in sys.argv:
-        # force arg profiles
+        # force arb profiles
+        # http://http.developer.nvidia.com/Cg/arbfp1.html
+        # Data-dependent loops are not allowed; all loops must be unrollable.
+        # multi-vendor
         profile = { CG_GL_VERTEX: CG_PROFILE_ARBVP1,
                     CG_GL_FRAGMENT: CG_PROFILE_ARBFP1 }[shader_type]
     else:
+        # this will never return glsl
         profile = cg_gl.cgGLGetLatestProfile(shader_type)
     
     print "profile: ", cg.cgGetProfileString(profile)
