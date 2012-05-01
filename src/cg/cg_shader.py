@@ -11,6 +11,7 @@ from platform import cg_platform as cg, cg_gl_platform as cg_gl
 
 cg_gl.cgGLSetDebugMode(CG_FALSE)
 cg.cgGetParameterName.restype = c_char_p
+cg.cgGetProfileString.restype = c_char_p
 cg.cgGetLastErrorString.restype = c_char_p
 cg.cgGetLastListing.restype = c_char_p
 
@@ -31,6 +32,7 @@ def create_context(shader_type):
     cg.cgSetParameterSettingMode(context, CG_DEFERRED_PARAMETER_SETTING)
     check_for_cg_error(context, "fu")
     profile = cg_gl.cgGLGetLatestProfile(shader_type)
+    #print cg.cgGetProfileString(profile)
     cg_gl.cgGLSetOptimalOptions(profile)
     check_for_cg_error(context, "selecting profile")
 
