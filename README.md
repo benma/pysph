@@ -7,6 +7,7 @@ pysph is a demo of:
 * sph (smooth particle hydrodynamics) fluid simulation
 * screen space fluid rendering, based on Simon Green's paper [Screen Space Fluid Rendering with Curvature Flow](http://www.cs.rug.nl/~roe/publications/fluidcurvature.pdf).
 * how to use Python for these kind of things using the excellent pyopengl and pyopencl libraries.
+* how to make and use bindings to the Cg runtime libraries in Python.
 
 Also contained are ports of radix sort and bitonic sort to pyopencl. Based on [enjalot's work](https://github.com/enjalot/adventures_in_opencl/tree/master/experiments). 
 
