@@ -32,7 +32,7 @@ def create_context(shader_type):
     cg.cgSetParameterSettingMode(context, CG_DEFERRED_PARAMETER_SETTING)
     check_for_cg_error(context, "fu")
     profile = cg_gl.cgGLGetLatestProfile(shader_type)
-    #print cg.cgGetProfileString(profile)
+    #print "profile: ", profile, " ", cg.cgGetProfileString(profile)
     cg_gl.cgGLSetOptimalOptions(profile)
     check_for_cg_error(context, "selecting profile")
 
