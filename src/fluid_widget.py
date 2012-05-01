@@ -6,7 +6,6 @@ from PySide import QtCore
 from PySide.QtOpenGL import QGLWidget
 
 from sph import FluidSimulator
-from fluid_rendering import FluidRenderer
 
 class FluidWidget(QGLWidget):
     gl_initialized = QtCore.Signal()

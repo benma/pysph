@@ -161,10 +161,7 @@ class FluidRenderer(object):
         simple.render_particles(self.position_vbo, self.N)
 
     def render_points(self):
-        glEnable(GL_POINT_SMOOTH)
-        glPointSize(3)
-        glColor3f(0,0,0.8)
-        simple.render_particles(self.position_vbo, self.N)
+        simple.render_points(self.position_vbo, self.N)
 
     def render_point_sprites(self, shader, enable_depth_test=True):
         """

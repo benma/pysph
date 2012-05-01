@@ -1,11 +1,10 @@
 """
 Main window setup.
 """
+import sys
 
 from PySide import QtCore,QtGui
 from ui import Ui_MainWindow
-
-from fluid_rendering import FluidRenderer
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, N):
@@ -19,7 +18,8 @@ class MainWindow(QtGui.QMainWindow):
 
         
         from sph_demo import SPHDemo
-        self.sph_demo = SPHDemo(N, size=(self.ui.fluid.width(), self.ui.fluid.height()))
+        enable_advanced_rendering = not '--disable-advanced-rendering' in sys.argv
+        self.sph_demo = SPHDemo(N, size=(self.ui.fluid.width(), self.ui.fluid.height()), enable_advanced_rendering=enable_advanced_rendering)
 
         # ui.fluid is the FluidWidget QGLWidget-widget.
         self.ui.fluid.init(self.sph_demo)
@@ -39,6 +39,14 @@ class MainWindow(QtGui.QMainWindow):
         self.statusBar().addPermanentWidget(self.statusBarFps)
         self.statusBar().addWidget(statusBarInfo)
 
+        if not self.sph_demo.enable_advanced_rendering:
+            # disable ui elements dealing with advanced rendering
+            self.ui.rm_points.setChecked(True)
+            for el in (self.ui.rm_balls, 
+                       self.ui.rm_advanced, 
+                       self.ui.advanced,):
+                el.setEnabled(False)
+
     def setup_signals(self):
         """
         Set up callbacks for the widgets.
@@ -56,31 +64,34 @@ class MainWindow(QtGui.QMainWindow):
             self.sph_demo.params.paused = p
         ui.paused.toggled.connect(callback)
 
-        def callback(p):
-            self.sph_demo.params.blur_thickness_map = p
-        ui.blur_thickness_map.toggled.connect(callback)
-        def callback(p):
-            self.sph_demo.params.render_mean_curvature = p
-        ui.render_mean_curvature.toggled.connect(callback)        
+        if self.sph_demo.enable_advanced_rendering:
+            from fluid_rendering.fluid_renderer import FluidRenderer
 
-        def callback():
-            self.sph_demo.params.render_mode = FluidRenderer.RENDERMODE_POINTS
-        ui.rm_points.pressed.connect(callback)
-        def callback():
-            self.sph_demo.params.render_mode = FluidRenderer.RENDERMODE_BALLS
-        ui.rm_balls.pressed.connect(callback)
-        def callback():
-            self.sph_demo.params.render_mode = FluidRenderer.RENDERMODE_ADVANCED
-        ui.rm_advanced.pressed.connect(callback)
-        ui.rm_advanced.toggled.connect(ui.advanced.setEnabled)
+            def callback(p):
+                self.sph_demo.params.blur_thickness_map = p
+            ui.blur_thickness_map.toggled.connect(callback)
+            def callback(p):
+                self.sph_demo.params.render_mean_curvature = p
+            ui.render_mean_curvature.toggled.connect(callback)        
 
-        def callback(n):
-            self.sph_demo.params.smoothing_iterations = n
-        ui.smoothing_iterations.valueChanged.connect(callback)
+            def callback():
+                self.sph_demo.params.render_mode = FluidRenderer.RENDERMODE_POINTS
+            ui.rm_points.pressed.connect(callback)
+            def callback():
+                self.sph_demo.params.render_mode = FluidRenderer.RENDERMODE_BALLS
+            ui.rm_balls.pressed.connect(callback)
+            def callback():
+                self.sph_demo.params.render_mode = FluidRenderer.RENDERMODE_ADVANCED
+            ui.rm_advanced.pressed.connect(callback)
+            ui.rm_advanced.toggled.connect(ui.advanced.setEnabled)
 
-        def callback(n):
-            self.sph_demo.params.smoothing_z_contrib = n
-        ui.smoothing_z_contrib.valueChanged.connect(callback)
+            def callback(n):
+                self.sph_demo.params.smoothing_iterations = n
+            ui.smoothing_iterations.valueChanged.connect(callback)
+
+            def callback(n):
+                self.sph_demo.params.smoothing_z_contrib = n
+            ui.smoothing_z_contrib.valueChanged.connect(callback)
 
     def update_gui_from_params(self):
         params = self.sph_demo.params
@@ -89,17 +100,21 @@ class MainWindow(QtGui.QMainWindow):
         
         ui = self.ui
         ui.paused.setOn(params.paused)
-        ui.blur_thickness_map.setOn(params.blur_thickness_map)
-        ui.render_mean_curvature.setOn(params.render_mean_curvature)
+        
+        if self.sph_demo.enable_advanced_rendering:
+            from fluid_rendering.fluid_renderer import FluidRenderer
 
-        { FluidRenderer.RENDERMODE_POINTS: ui.rm_points,
-          FluidRenderer.RENDERMODE_BALLS: ui.rm_balls,
-          FluidRenderer.RENDERMODE_ADVANCED: ui.rm_advanced }[params.render_mode].setChecked(True)
+            ui.blur_thickness_map.setOn(params.blur_thickness_map)
+            ui.render_mean_curvature.setOn(params.render_mean_curvature)
 
-        ui.smoothing_iterations.setValue(params.smoothing_iterations)
-        ui.smoothing_z_contrib.setValue(params.smoothing_z_contrib)
+            { FluidRenderer.RENDERMODE_POINTS: ui.rm_points,
+              FluidRenderer.RENDERMODE_BALLS: ui.rm_balls,
+              FluidRenderer.RENDERMODE_ADVANCED: ui.rm_advanced }[params.render_mode].setChecked(True)
 
-        ui.advanced.setEnabled(ui.rm_advanced.isChecked())
+            ui.smoothing_iterations.setValue(params.smoothing_iterations)
+            ui.smoothing_z_contrib.setValue(params.smoothing_z_contrib)
+
+            ui.advanced.setEnabled(ui.rm_advanced.isChecked())
 
         params.dirty = False
            

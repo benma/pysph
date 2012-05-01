@@ -1,2 +1,2 @@
-from simple import *
-from fluid_renderer import FluidRenderer
+from simple import render_particles
+#from fluid_renderer import FluidRenderer

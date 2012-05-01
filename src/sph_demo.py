@@ -1,10 +1,14 @@
 from sph import FluidSimulator
-from fluid_rendering import FluidRenderer
+
 from OpenGL.GL import *
 import base_demo
 
 class SPHDemo(base_demo.BaseDemo):
-    def __init__(self, N=1000, size=(800,800)):
+    
+    def __init__(self, N=1000, size=(800,800), enable_advanced_rendering=True):
+        """
+        enable_advanced_rendering: if False, disable advanced rendering using Cg (balls/advanced rendering).
+        """
         super(SPHDemo, self).__init__(size=size)
         
         self.N = N
@@ -16,12 +20,16 @@ class SPHDemo(base_demo.BaseDemo):
         self.fluid_simulator = FluidSimulator(self.N, self.boxsize, gl_interop=True)
         self.framerate = 60
 
+        self.enable_advanced_rendering = enable_advanced_rendering
+
     def glinit(self):
         super(SPHDemo, self).glinit()
 
         # fluid simulator needs vertex buffer objects, this is why this needs to be initialized here
         self.fluid_simulator.cl_init()
-        self.fluid_renderer = fluid_renderer = FluidRenderer(self.size, self.fluid_simulator, self.projection_matrix)
+        if self.enable_advanced_rendering:
+            from fluid_rendering.fluid_renderer import FluidRenderer
+            self.fluid_renderer = fluid_renderer = FluidRenderer(self.size, self.fluid_simulator, self.projection_matrix)
 
         class Params(object):
             def __init__(self, **kwargs):
@@ -38,59 +46,62 @@ class SPHDemo(base_demo.BaseDemo):
                 self._paused = value
                 self.dirty = True
 
-            @property
-            def blur_thickness_map(self):
-                return fluid_renderer.blur_thickness_map
-            
-            @blur_thickness_map.setter
-            def blur_thickness_map(self, value):
-                fluid_renderer.blur_thickness_map = value
-                self.dirty = True
-            
-            @property
-            def render_mode(self):
-                return fluid_renderer.render_mode
+            if self.enable_advanced_rendering:
+                @property
+                def blur_thickness_map(self):
+                    return fluid_renderer.blur_thickness_map
 
-            @render_mode.setter
-            def render_mode(self, value):
-                fluid_renderer.render_mode = value
-                self.dirty = True
+                @blur_thickness_map.setter
+                def blur_thickness_map(self, value):
+                    fluid_renderer.blur_thickness_map = value
+                    self.dirty = True
 
-            @property
-            def smoothing_iterations(self):
-                return fluid_renderer.smoothing_iterations
+                @property
+                def render_mode(self):
+                    return fluid_renderer.render_mode
+
+                @render_mode.setter
+                def render_mode(self, value):
+                    fluid_renderer.render_mode = value
+                    self.dirty = True
+
+                @property
+                def smoothing_iterations(self):
+                    return fluid_renderer.smoothing_iterations
+
+                @smoothing_iterations.setter
+                def smoothing_iterations(self, value):
+                    fluid_renderer.smoothing_iterations = max(0, min(100, value))
+                    self.dirty = True
+
+                @property
+                def smoothing_z_contrib(self):
+                    return fluid_renderer.smoothing_z_contrib
+
+                @smoothing_z_contrib.setter
+                def smoothing_z_contrib(self, value):
+                    fluid_renderer.smoothing_z_contrib = max(0, min(100, value))
+                    self.dirty = True
+
+                @property
+                def render_mean_curvature(self):
+                    return fluid_renderer.render_mean_curvature
+
+                @render_mean_curvature.setter
+                def render_mean_curvature(self, value):
+                    fluid_renderer.render_mean_curvature = value
+                    self.dirty = True
                 
-            @smoothing_iterations.setter
-            def smoothing_iterations(self, value):
-                fluid_renderer.smoothing_iterations = max(0, min(100, value))
-                self.dirty = True
-
-            @property
-            def smoothing_z_contrib(self):
-                return fluid_renderer.smoothing_z_contrib
-
-            @smoothing_z_contrib.setter
-            def smoothing_z_contrib(self, value):
-                fluid_renderer.smoothing_z_contrib = max(0, min(100, value))
-                self.dirty = True
-
-            @property
-            def render_mean_curvature(self):
-                return fluid_renderer.render_mean_curvature
-
-            @render_mean_curvature.setter
-            def render_mean_curvature(self, value):
-                fluid_renderer.render_mean_curvature = value
-                self.dirty = True
-                
-                
-        self.params = Params(# initial values
-                             paused=False,
-                             blur_thickness_map=True,
-                             render_mode=FluidRenderer.RENDERMODE_BALLS,
-                             smoothing_iterations=50,
-                             smoothing_z_contrib=10,
-                             render_mean_curvature=False,)
+        initial_params = {
+            'paused': False
+        }
+        if self.enable_advanced_rendering:
+            initial_params.update(blur_thickness_map=True,
+                                  render_mode=FluidRenderer.RENDERMODE_BALLS,
+                                  smoothing_iterations=50,
+                                  smoothing_z_contrib=10,
+                                  render_mean_curvature=False)
+        self.params = Params(**initial_params)
 
     def render_box(self):
         
@@ -136,5 +147,9 @@ class SPHDemo(base_demo.BaseDemo):
 
         ## render particles
         self.mouse_transform()
-        self.fluid_renderer.render()
+        if self.enable_advanced_rendering:
+            self.fluid_renderer.render()
+        else:
+            from fluid_rendering import simple
+            simple.render_points(self.fluid_simulator.position_vbo, self.fluid_simulator.N)
 
