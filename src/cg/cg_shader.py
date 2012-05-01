@@ -26,27 +26,36 @@ def check_for_cg_error(context, msg):
             sys.stderr.write("%s\n" % cg.cgGetLastListing(context))
         sys.exit()
 
-_context = None
+def memoize(f):
+    cache = {}
+    def new_f(*args):
+        if args in cache:
+            return cache[args]
+        return cache.setdefault(args, f(*args))
+    return new_f
+
+@memoize
 def _create_context():
-    global _context
-    if _context is not None:
-        return _context
     context = cg.cgCreateContext()
     check_for_cg_error(context, "creating context")
     cg.cgSetParameterSettingMode(context, CG_DEFERRED_PARAMETER_SETTING)
-    _context = context
     return context
 
+@memoize
 def create_profile(shader_type):
     context = _create_context()
     if '--cg-glsl' in sys.argv:
-        # use glsl profiles
+        # force glsl profiles
         profile = { CG_GL_VERTEX: CG_PROFILE_GLSLV,
                     CG_GL_FRAGMENT: CG_PROFILE_GLSLF }[shader_type]
+    elif '--cg-arb' in sys.argv:
+        # force arg profiles
+        profile = { CG_GL_VERTEX: CG_PROFILE_ARBVP1,
+                    CG_GL_FRAGMENT: CG_PROFILE_ARBFP1 }[shader_type]
     else:
         profile = cg_gl.cgGLGetLatestProfile(shader_type)
     
-    #print "profile: ", profile, " ", cg.cgGetProfileString(profile)
+    print "profile: ", cg.cgGetProfileString(profile)
     cg_gl.cgGLSetOptimalOptions(profile)
     check_for_cg_error(context, "selecting profile")
 
@@ -91,12 +100,13 @@ class _CGShader(object):
             entry,  # Entry function name
             None # No extra compiler options
             )
-        check_for_cg_error(self.context, "creating program from string")
-        cg_gl.cgGLLoadProgram(program)
-        check_for_cg_error(self.context, "loading program")
-        self.program = program
+        
+        self.error_prefix = '%s shader, entry = %s' % ("vertex" if self.vertex else "fragment", entry)
 
-        self.error_prefix = '%s shader' % ("vertex" if self.vertex else "fragment")
+        self.check_error("creating program from string")
+        cg_gl.cgGLLoadProgram(program)
+        self.check_error("loading program")
+        self.program = program
 
     def check_error(self, msg):
         check_for_cg_error(self.context, '%s: %s' % (self.error_prefix, msg))

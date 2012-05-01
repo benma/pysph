@@ -58,7 +58,7 @@ float4 fragment(float4 color : COLOR, uniform float3 c): COLOR {
   return color;
 }
 
-float4 texFragment(float4 position : POSITION, float2 tex : TEXCOORD0) : COLOR {
+float4 texFragment(float4 position : POSITION, float2 tex : TEXCOORD0, uniform float4x4 fs_proj, uniform float4x4 fs_modelView) : COLOR {
   return tex2D(texSampler, tex);
 }
 

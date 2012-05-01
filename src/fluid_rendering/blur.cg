@@ -1,3 +1,5 @@
+static const float sigma = ${sigma};
+static const float radius = ${radius};
 sampler2D texSampler : TEXUNIT0 = sampler_state {
   magfilter = LINEAR;
   minfilter = LINEAR;
@@ -11,7 +13,7 @@ void passVertex(float4 pos : POSITION, float2 tex : TEXCOORD0, out float4 outPos
   outTex = tex;
 }
 
-float blurFragment(float2 uv : TEXCOORD0, uniform float radius, uniform float sigma, uniform float2 direction, uniform float2 texelSize) : COLOR {
+float blurFragment(float2 uv : TEXCOORD0, uniform float2 direction, uniform float2 texelSize) : COLOR {
 
   float sum = 0;
   float wsum = 0;

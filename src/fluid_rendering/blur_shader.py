@@ -9,17 +9,21 @@ class BlurShader(CGDefaultShader):
         
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         with open('%s/blur.cg' % cur_dir) as f:
-            source = f.read()
+            from mako.template import Template
+            source = str(Template(f.read()).render(
+                sigma=sigma,
+                radius=radius,
+                ))
 
         super(BlurShader, self).__init__(source, entry_vertex="passVertex", entry_fragment="blurFragment")
 
         self.direction = BlurShader.HORIZONTAL
-        self._direction = self.get_parameter("direction")
-        self.radius = radius
-        self._radius = self.get_parameter("radius")
         self.sigma = sigma
-        self._sigma = self.get_parameter("sigma")
 
+        self._direction = self.get_parameter("direction")
+        # self.radius = radius
+        # self._radius = self.get_parameter("radius")
+        # self._sigma = self.get_parameter("sigma")
         self._texelSize = self.get_parameter("texelSize")
 
     from contextlib import contextmanager
@@ -30,8 +34,8 @@ class BlurShader(CGDefaultShader):
             yield
 
     def set_default_parameters(self):
-        self._radius.setf(self.radius)
-        self._sigma.setf(self.sigma)
+        #self._radius.setf(self.radius)
+        #self._sigma.setf(self.sigma)
         if self.direction == BlurShader.HORIZONTAL:
             self._direction.set2f(1,0)
             self._texelSize.setf(1./self.width)

@@ -17,7 +17,6 @@ class FluidShader(CGDefaultShader):
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         with open('%s/shader.cg' % cur_dir) as f:
             from mako.template import Template
-            
             source = str(Template(f.read()).render(
                 boxsize=boxsize,
                 radius=radius,
