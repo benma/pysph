@@ -172,6 +172,8 @@ class CGVertexFragmentShader(object):
         self.check_error("disable vertex profile")
         cg_gl.cgGLDisableProfile(self.fragment_profile)
         self.check_error("disable fragment profile")
+        cg_gl.cgGLUnbindProgram(self.vertex_profile)
+        cg_gl.cgGLUnbindProgram(self.fragment_profile)
 
     def get_parameter(self, name):
         p = cg.cgGetNamedParameter(self.program, name)
