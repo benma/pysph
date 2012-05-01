@@ -5,8 +5,9 @@ from main_window import MainWindow
 
 if __name__ == "__main__":
     if '--help' in sys.argv:
-        print "Run with: python main.py [--disable-advanced-rendering] N"
-        print "\t--disable-advanced-rendering disables the use of Cg shaders"
+        print "Run with: python main.py [--disable-advanced-rendering] [--cg-glsl]  N"
+        print "\t--disable-advanced-rendering: disables the use of Cg shaders"
+        print "\t--cg-glsl: use glsl profiles. If you have an ATI card, use this."
         print "\tN: number of particles. Start with 8000 and slowly increase"
         sys.exit(0)
 
