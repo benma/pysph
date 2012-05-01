@@ -14,13 +14,13 @@ class BlurShader(CGDefaultShader):
         super(BlurShader, self).__init__(source, entry_vertex="passVertex", entry_fragment="blurFragment")
 
         self.direction = BlurShader.HORIZONTAL
-        self._direction = self.get_fragment_parameter("direction")
+        self._direction = self.get_parameter("direction")
         self.radius = radius
-        self._radius = self.get_fragment_parameter("radius")
+        self._radius = self.get_parameter("radius")
         self.sigma = sigma
-        self._sigma = self.get_fragment_parameter("sigma")
+        self._sigma = self.get_parameter("sigma")
 
-        self._texelSize = self.get_fragment_parameter("texelSize")
+        self._texelSize = self.get_parameter("texelSize")
 
     from contextlib import contextmanager
     @contextmanager

@@ -1,6 +1,6 @@
-extern const float4x4 modelViewProj;
-extern const float4x4 modelView;
-extern const float4x4 proj;
+extern const float4x4 vs_modelViewProj;
+extern const float4x4 vs_modelView;
+extern const float4x4 vs_proj;
 
 static const float width = ${window_size[0]};
 static const float height = ${window_size[1]};
@@ -10,8 +10,10 @@ static const float2 texelSize = float2(1./width, 1./height);
 static const float2 right = float2(texelSize.x, 0);
 static const float2 down = float2(0, texelSize.y);
 
-
-static float near = proj[2][3]/proj[2][2], far = proj[2][3]/(1+proj[2][2]), w = proj[0][0], h = proj[1][1];
+#define NEAR (fs_proj[2][3]/fs_proj[2][2])
+#define FAR (fs_proj[2][3]/(1+fs_proj[2][2]))
+#define W (fs_proj[0][0])
+#define H (fs_proj[1][1])
 
 sampler2D texSampler : TEXUNIT0;
 sampler2D thicknessSampler : TEXUNIT1;
@@ -31,15 +33,15 @@ struct VsOutput {
 
 VsOutput vertex(VsInput input) {
   VsOutput output;
-  output.position = mul(modelViewProj, input.position);
+  output.position = mul(vs_modelViewProj, input.position);
   output.color = float4(0,0,1,1);
   output.tex = input.tex;
   
-  float4 posEye = mul(modelView, input.position);
+  float4 posEye = mul(vs_modelView, input.position);
   float3 posEye3 = posEye.xyz/posEye.w;
   float dist = length(posEye3);
 
-  const float scale = height*proj[1][1];
+  const float scale = height*vs_proj[1][1];
 
   output.pointSize = radius * scale/dist;
   output.posEye = posEye3;
@@ -58,9 +60,7 @@ float4 fragment(float4 color : COLOR, uniform float3 c): COLOR {
 
 float4 texFragment(float4 position : POSITION, float2 tex : TEXCOORD0) : COLOR {
   return tex2D(texSampler, tex);
-
 }
-
 
 // xyz = normal, w = r^2
 float4 getNormal(float2 tex) {
@@ -72,7 +72,7 @@ float4 getNormal(float2 tex) {
   return N;
 }
 
-inline float projectZ(float z) {
+inline float projectZ(float z, float near, float far) {
   // convert true depth z to depth-buffer depth 
 
   /* assuming this is the projection matrix:
@@ -85,7 +85,7 @@ inline float projectZ(float z) {
   return far*(z+near)/(z*(far-near));
 }
 
-float3 uvToEye(float2 uv, float depth) {
+float3 uvToEye(float2 uv, float depth, float w, float h) {
   uv = uv * 2 - 1;
 
   /* assuming this is the projection matrix:
@@ -98,9 +98,7 @@ float3 uvToEye(float2 uv, float depth) {
   return float3(-uv.x/w, -uv.y/h, 1) * z;
 }
 
-
-
-float depthFragment(VsOutput input, out float depth : DEPTH) : COLOR {
+float depthFragment(VsOutput input, out float depth : DEPTH, uniform float4x4 fs_proj, uniform float4x4 fs_modelView) : COLOR {
   // render the 3D z-component of the vertex position
   // note: we are rendering the *unprojected* z-coordinate,
   // this way, the near/far values do not have an influence on the smoothing process.
@@ -119,12 +117,12 @@ float depthFragment(VsOutput input, out float depth : DEPTH) : COLOR {
 
   // depth buffer needs the projected z
   // (p = mul(proj, pos3D); depth = p.z/p.w;)
-  depth = projectZ(z);
+  depth = projectZ(z, NEAR, FAR);
   return z;
 }
 
 
-float thicknessFragment(VsOutput input) : COLOR {
+float thicknessFragment(VsOutput input, uniform float4x4 fs_proj, uniform float4x4 fs_modelView) : COLOR {
   // compute normal
   float4 N = getNormal(input.tex);
   float r2 = N.w;
@@ -136,9 +134,9 @@ float thicknessFragment(VsOutput input) : COLOR {
   return 1.; // additive blending of constant color ==> thickness
 }
 
-float3 to3D(float2 uv) {
+float3 to3D(float2 uv, float w, float h) {
   float z = tex2D(texSampler, uv).x;
-  return uvToEye(uv, z);
+  return uvToEye(uv, z, w, h);
 }
 
 float diffZ(float2 uv, float2 offset) {
@@ -153,8 +151,7 @@ float diffZ(float2 uv, float2 offset) {
   return (dp - dm)/(2*h);
 }
 
-float3 computeNormal(float2 uv) {
-
+float3 computeNormal(float2 uv, float w, float h, float4x4 fs_modelView) {
   float z = tex2D(texSampler, uv).x;
   float z_x = diffZ(uv, right);
   float z_y = diffZ(uv, down);
@@ -179,13 +176,13 @@ float3 computeNormal(float2 uv) {
   float3 normal = normalize(cross(_dx,_dy));
   // normal is in eye-space. transform to world space.
   // hack: should use view transformation only.
-  normal = mul(transpose((float3x3)modelView), normal);
+  normal = mul(transpose((float3x3)fs_modelView), normal);
   return normal;
 
 }
 
 
-float4 ballFragment(VsOutput input, out float depth : DEPTH) : COLOR0 {
+float4 ballFragment(VsOutput input, out float depth : DEPTH, uniform float4x4 fs_proj, uniform float4x4 fs_modelView) : COLOR0 {
   // compute normal
   float4 N = getNormal(input.tex);
   float r2 = N.w;
@@ -194,7 +191,7 @@ float4 ballFragment(VsOutput input, out float depth : DEPTH) : COLOR0 {
     discard;
   }
   float4 pixelPos = float4(input.posEye + N.xyz*radius, 1.); // +N*radius: distance from sphere surface, not sphere center (right handed. for left handed, -N*radius)
-  float4 clipSpacePos = mul(proj, pixelPos);
+  float4 clipSpacePos = mul(fs_proj, pixelPos);
   
   depth = clipSpacePos.z / clipSpacePos.w;
 
@@ -214,11 +211,11 @@ float4 ballFragment(VsOutput input, out float depth : DEPTH) : COLOR0 {
 /*   return false; */
 /* } */
 
-float4 finalFragment(float4 position: POSITION, float2 uv: TEXCOORD0, out float depth : DEPTH) : COLOR {
+float4 finalFragment(float4 position: POSITION, float2 uv: TEXCOORD0, out float depth : DEPTH, uniform float4x4 fs_proj, uniform float4x4 fs_modelView) : COLOR {
   // depth buffer needs projected depth
   depth = tex2D(texSampler, uv).x;
   if(depth == 0) discard;
-  depth = projectZ(depth);
+  depth = projectZ(depth, NEAR, FAR);
   if(depth == 0) discard;
 
   // scale thickness by radius so the thickness looks the same for any number of particles present in the 
@@ -226,9 +223,9 @@ float4 finalFragment(float4 position: POSITION, float2 uv: TEXCOORD0, out float 
   // less particles => larger radius => more thickness contribution per particle
   float thickness = tex2D(thicknessSampler, uv).x*radius;
 
+  float w = W, h = H;
 
-
-  float3 normal = computeNormal(uv);
+  float3 normal = computeNormal(uv, w, h, fs_modelView);
 
   //return float4(normal, 1);
   // Beer's law
@@ -244,12 +241,12 @@ float4 finalFragment(float4 position: POSITION, float2 uv: TEXCOORD0, out float 
   float diffuse = abs(dot(lightDir, normal.xyz))*.5+.5;
   //return float4(float3(diffuse),1);
   // specular
-  float3 pos3D = mul(transpose((float3x3)modelView), to3D(uv));
+  float3 pos3D = mul(transpose((float3x3)fs_modelView), to3D(uv, w, h));
 
   float normal_reflectance = pow(saturate(dot(normal, lightDir)), 6);
 
   // hack: should be view only, but in our example, the model matrix is the identity
-  const float3 eyePos = mul(-modelView._m30_m31_m32, transpose((float3x3)modelView));
+  const float3 eyePos = mul(-fs_modelView._m30_m31_m32, transpose((float3x3)fs_modelView));
 
   float spec_coeff = saturate(normal_reflectance + (1 - normal_reflectance) * pow(1 - abs(dot(normal, normalize(eyePos - pos3D))), 8)); // Schlick's approximation
 

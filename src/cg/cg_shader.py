@@ -10,6 +10,7 @@ from cg_gl import *
 from platform import cg_platform as cg, cg_gl_platform as cg_gl
 
 cg_gl.cgGLSetDebugMode(CG_FALSE)
+cg.cgCreateProgram.restype = CGprogram
 cg.cgGetParameterName.restype = c_char_p
 cg.cgGetProfileString.restype = c_char_p
 cg.cgGetLastErrorString.restype = c_char_p
@@ -25,18 +26,31 @@ def check_for_cg_error(context, msg):
             sys.stderr.write("%s\n" % cg.cgGetLastListing(context))
         sys.exit()
 
-def create_context(shader_type):
+_context = None
+def _create_context():
+    global _context
+    if _context is not None:
+        return _context
     context = cg.cgCreateContext()
     check_for_cg_error(context, "creating context")
-    
     cg.cgSetParameterSettingMode(context, CG_DEFERRED_PARAMETER_SETTING)
-    check_for_cg_error(context, "fu")
-    profile = cg_gl.cgGLGetLatestProfile(shader_type)
+    _context = context
+    return context
+
+def create_profile(shader_type):
+    context = _create_context()
+    if '--cg-glsl' in sys.argv:
+        # use glsl profiles
+        profile = { CG_GL_VERTEX: CG_PROFILE_GLSLV,
+                    CG_GL_FRAGMENT: CG_PROFILE_GLSLF }[shader_type]
+    else:
+        profile = cg_gl.cgGLGetLatestProfile(shader_type)
+    
     #print "profile: ", profile, " ", cg.cgGetProfileString(profile)
     cg_gl.cgGLSetOptimalOptions(profile)
     check_for_cg_error(context, "selecting profile")
 
-    return context, profile
+    return profile
 
 class CGParameter(object):
     def __init__(self, name, parameter):
@@ -66,7 +80,8 @@ class _CGShader(object):
         assert self.vertex ^ self.fragment, "Use one of CGVertexShader, CGFragmentShader or CGVertexFragmentShader."
         
         self.entry = entry or self.default_entry
-        self.context, self.profile = create_context(CG_GL_VERTEX if self.vertex else CG_GL_FRAGMENT)
+        self.context = _create_context()
+        self.profile = create_profile(CG_GL_VERTEX if self.vertex else CG_GL_FRAGMENT)
 
         program = cg.cgCreateProgram(
             self.context, # Cg runtime context
@@ -125,34 +140,51 @@ class CGFragmentShader(_CGShader):
 
 class CGVertexFragmentShader(object):
     """
-    Combined vertex/fragment shader. When bound, both the vertex shader and the fragment shader are bound.
+    Combined vertex/fragment shader. 
     """
     def __init__(self, code, entry_vertex="vertex", entry_fragment="fragment"):
         assert entry_vertex and entry_fragment
-        
-        self.vertex_shader = CGVertexShader(code, entry_vertex)
-        self.fragment_shader = CGFragmentShader(code, entry_fragment)
+        vertex_shader = CGVertexShader(code, entry_vertex)
+        fragment_shader = CGFragmentShader(code, entry_fragment)
+        self.context = _create_context()
+        self.vertex_profile = vertex_shader.profile
+        self.fragment_profile = fragment_shader.profile
+        self.program = cg.cgCombinePrograms2(vertex_shader.program, fragment_shader.program)
+        check_for_cg_error(self.context, "combine programs")
+        cg.cgDestroyProgram(vertex_shader.program)
+        cg.cgDestroyProgram(fragment_shader.program)
+        cg_gl.cgGLLoadProgram(self.program)
+        check_for_cg_error(self.context, "load combined program")
+
+    def check_error(self, msg):
+        check_for_cg_error(self.context, msg)
 
     def bind(self):
-        self.vertex_shader.bind()
-        self.fragment_shader.bind()
+        cg_gl.cgGLBindProgram(self.program)
+        self.check_error("binding program")
+        cg_gl.cgGLEnableProfile(self.vertex_profile)
+        self.check_error("enable vertex profile")
+        cg_gl.cgGLEnableProfile(self.fragment_profile)
+        self.check_error("enable fragment profile")
 
     def unbind(self):
-        self.vertex_shader.unbind()
-        self.fragment_shader.unbind()
+        cg_gl.cgGLDisableProfile(self.vertex_profile)
+        self.check_error("disable vertex profile")
+        cg_gl.cgGLDisableProfile(self.fragment_profile)
+        self.check_error("disable fragment profile")
 
-    def get_vertex_parameter(self, name):
-        return self.vertex_shader.get_parameter(name)
-
-    def get_fragment_parameter(self, name):
-        return self.fragment_shader.get_parameter(name)
+    def get_parameter(self, name):
+        p = cg.cgGetNamedParameter(self.program, name)
+        self.check_error("could not get %r parameter" % name)
+        return CGParameter(name, p)
 
     def update_parameters(self):
-        self.vertex_shader.update_parameters()
-        self.fragment_shader.update_parameters()
+        cg.cgUpdateProgramParameters(self.program)
+        self.check_error("updating parameters")
         
     def __enter__(self):
         self.bind()
+        self.update_parameters()
         
     def __exit__(self, *args):
         self.unbind()

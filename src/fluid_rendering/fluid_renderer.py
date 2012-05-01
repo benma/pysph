@@ -25,16 +25,19 @@ class FluidShader(CGDefaultShader):
                 ))
         super(FluidShader, self).__init__(source, entry_vertex, entry_fragment)
 
-        self.vertex_model_view_proj = self.get_vertex_parameter("modelViewProj")
-        self.vertex_model_view = self.get_vertex_parameter("modelView")
-        self.fragment_model_view = self.get_fragment_parameter("modelView")
-        self.vertex_proj = self.get_vertex_parameter("proj")
-        self.fragment_proj = self.get_fragment_parameter("proj")
+        # with combined cg programs, one cannot have the same parameter in the vertex and in the fragment shader :(
+        # http://forum-archive.developer.nvidia.com/index.php?showtopic=6149
+        self.vertex_model_view_proj = self.get_parameter("vs_modelViewProj")
+        self.vertex_model_view = self.get_parameter("vs_modelView")
+        self.vertex_proj = self.get_parameter("vs_proj")
+        self.fragment_model_view = self.get_parameter("fs_modelView")
+        self.fragment_proj = self.get_parameter("fs_proj")
 
     def set_default_parameters(self):
         cg_gl_platform.cgGLSetStateMatrixParameter(self.vertex_model_view_proj, cg_gl.CG_GL_MODELVIEW_PROJECTION_MATRIX, cg_gl.CG_GL_MATRIX_IDENTITY)
         cg_gl_platform.cgGLSetStateMatrixParameter(self.vertex_model_view, cg_gl.CG_GL_MODELVIEW_MATRIX, cg_gl.CG_GL_MATRIX_IDENTITY)
         cg_gl_platform.cgGLSetStateMatrixParameter(self.vertex_proj, cg_gl.CG_GL_PROJECTION_MATRIX, cg_gl.CG_GL_MATRIX_IDENTITY)
+
         cg_gl_platform.cgGLSetStateMatrixParameter(self.fragment_model_view, cg_gl.CG_GL_MODELVIEW_MATRIX, cg_gl.CG_GL_MATRIX_IDENTITY)
         cg_gl_platform.cgGLSetStateMatrixParameter(self.fragment_proj, cg_gl.CG_GL_PROJECTION_MATRIX, cg_gl.CG_GL_MATRIX_IDENTITY)
 

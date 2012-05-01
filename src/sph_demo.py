@@ -152,4 +152,3 @@ class SPHDemo(base_demo.BaseDemo):
         else:
             from fluid_rendering import simple
             simple.render_points(self.fluid_simulator.position_vbo, self.fluid_simulator.N)
-
