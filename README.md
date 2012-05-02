@@ -18,7 +18,7 @@ Big thanks to Ian Johnson (enjalot) for the radix/bitonic sort and his excellent
 Run with `python main.py [number of particles]`. Start with `python main.py 8000` and slowly scale the number of particles up.
 
 You can disable the advanced rendering by using `python main.py --disable-advanced-rendering [number of particles]`.
-If you have an ATI graphics card, Cg's automatically selected profiles probably will not work. Use `python main.py --cg-glsl [number of particles]` to enable GLSL profiles, which should work with ATI cards.
+For more options, run `python main.py --help`.
 
 ## Dependencies
 
