@@ -49,6 +49,11 @@ $ python setup.py install --prefix=/path/to/pysph_env/ --optimize=1
 $ source bin/activate
 $ python /path/to/pysph/main.py
 ```
+
+**On Windows**
+* [pyopencl build instructions](http://wiki.tiker.net/PyOpenCL/Installation/Windows).
+* [PySide](http://qt-project.org/wiki/PySide_Binaries_Windows)
+
 ## Limitations
 
 Screen space rendering rendering is not complete. It is not optimized for speed. 
