@@ -345,7 +345,7 @@ class FluidSimulator(object):
 if __name__ == '__main__':
     N = 10**3
     fluid_simulator = FluidSimulator(N)
-
+    fluid_simulator.cl_init()
     track_particle = 123
     position = fluid_simulator.get_position()
     print 'position of particle %i before simulation: %s' % (track_particle, position[track_particle,0:3])
