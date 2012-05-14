@@ -202,7 +202,9 @@ class FluidSimulator(object):
         if self.gl_interop:
             # share positions with opengl (for rendering)
             # use shared gl buffer
+            self.position_vbo.bind() # added to test on ATI
             self.position_cl = cl.GLBuffer(ctx, mf.READ_WRITE, int(self.position_vbo.buffers[0]))
+            self.position_vbo.unbind() # added to test on ATI
             self.cl_gl_objects = [self.position_cl]
         else:
             # create new device buffer
