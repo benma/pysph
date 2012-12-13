@@ -58,3 +58,5 @@ $ python /path/to/pysph/main.py
 
 Screen space rendering rendering is not complete. It is not optimized for speed. 
 Also, the rendering at the boundaries is not properly dealt with yet, you can see the artefacts in the screenshots.
+
+The program crashes when using an **AMD card**. I welcome pull requests from AMD users.
