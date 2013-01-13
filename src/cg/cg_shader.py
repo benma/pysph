@@ -60,7 +60,7 @@ def create_profile(shader_type):
     else:
         # this will never return glsl
         profile = cg_gl.cgGLGetLatestProfile(shader_type)
-    
+
     print "profile: ", cg.cgGetProfileString(profile)
     cg_gl.cgGLSetOptimalOptions(profile)
     check_for_cg_error(context, "selecting profile")

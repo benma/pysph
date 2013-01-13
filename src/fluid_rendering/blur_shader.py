@@ -14,7 +14,6 @@ class BlurShader(CGDefaultShader):
                 sigma=sigma,
                 radius=radius,
                 ))
-
         super(BlurShader, self).__init__(source, entry_vertex="passVertex", entry_fragment="blurFragment")
 
         self.direction = BlurShader.HORIZONTAL

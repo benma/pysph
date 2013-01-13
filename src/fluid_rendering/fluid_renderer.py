@@ -113,8 +113,11 @@ class FluidRenderer(object):
 
         from pyopencl.tools import get_gl_sharing_context_properties
         additional_properties = get_gl_sharing_context_properties()
-        
-        self.ctx = cl.Context(properties=[(cl.context_properties.PLATFORM, platform)] + additional_properties)
+        # Some OSs prefer clCreateContextFromType, some prefer clCreateContext. Try both.
+        try: 
+            self.ctx = cl.Context(properties=[(cl.context_properties.PLATFORM, platform)] + additional_properties)
+        except:
+            self.ctx = cl.Context(properties=[(cl.context_properties.PLATFORM, platform)] + additional_properties, devices=[device])
         self.queue = cl.CommandQueue(self.ctx, device=device, properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
 
     def cl_init(self):
