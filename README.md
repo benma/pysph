@@ -38,15 +38,13 @@ If you want to isolate the installation of pyopencl, you can still install it in
 
 ```
 $ virtualenv --system-site-packages pysph_env
-
-$ wget http://pypi.python.org/packages/source/p/pyopencl/pyopencl-2011.2.tar.gz
-$ tar xfz pyopencl-2011.2.tar.gz
-$ cd pyopencl-2011.2/
+$ source pysph_env/bin/activate
+$ git clone http://git.tiker.net/trees/pyopencl.git
+$ cd pyopencl/
 $ python ./configure.py --cl-enable-gl
 $ python setup.py build
 $ python setup.py install --prefix=/path/to/pysph_env/ --optimize=1 
 
-$ source bin/activate
 $ python /path/to/pysph/main.py
 ```
 
