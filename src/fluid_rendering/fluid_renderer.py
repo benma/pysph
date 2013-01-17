@@ -5,9 +5,9 @@ import numpy as np
 import os
 
 from cg import CGDefaultShader, cg_gl_platform, cg_gl
-import simple
+from . import simple
 
-from blur_shader import BlurShader
+from .blur_shader import BlurShader
 
 
 class FluidShader(CGDefaultShader):
@@ -42,7 +42,7 @@ class FluidShader(CGDefaultShader):
 
 class FluidRenderer(object):
     number_of_render_modes = 3
-    RENDERMODE_POINTS, RENDERMODE_BALLS, RENDERMODE_ADVANCED = range(number_of_render_modes)
+    RENDERMODE_POINTS, RENDERMODE_BALLS, RENDERMODE_ADVANCED = list(range(number_of_render_modes))
     render_mode = RENDERMODE_ADVANCED
 #    render_mode = RENDERMODE_BALLS
 
@@ -179,8 +179,8 @@ class FluidRenderer(object):
             else:
                 glDisable(GL_DEPTH_TEST)
             
-	    # this lets use define the size of the point in the shader
-	    glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
+            # this lets use define the size of the point in the shader
+            glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
 
             # this enables rendering of small squares
             glEnable(GL_POINT_SPRITE)
@@ -232,7 +232,7 @@ class FluidRenderer(object):
         if self.smooth_depth:
             cl.enqueue_acquire_gl_objects(self.queue, self.cl_gl_objects)
             local_size = self.cl_local_size
-            for i in xrange(self.smoothing_iterations):
+            for i in range(self.smoothing_iterations):
                 # alternate between writing to depth2_target and depth1_target
                 # (can't read from and write to the same texture at the same time).
                 args = (np.float32(self.smoothing_dt),

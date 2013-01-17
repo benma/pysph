@@ -65,7 +65,7 @@ class MainWindow(QtGui.QMainWindow):
         ui.paused.toggled.connect(callback)
 
         if self.sph_demo.enable_advanced_rendering:
-            from fluid_rendering.fluid_renderer import FluidRenderer
+            #from fluid_rendering.fluid_renderer import FluidRenderer
 
             def callback(p):
                 self.sph_demo.params.blur_thickness_map = p
@@ -75,13 +75,13 @@ class MainWindow(QtGui.QMainWindow):
             ui.render_mean_curvature.toggled.connect(callback)        
 
             def callback():
-                self.sph_demo.params.render_mode = FluidRenderer.RENDERMODE_POINTS
+                self.sph_demo.params.render_mode = 0
             ui.rm_points.pressed.connect(callback)
             def callback():
-                self.sph_demo.params.render_mode = FluidRenderer.RENDERMODE_BALLS
+                self.sph_demo.params.render_mode = 1
             ui.rm_balls.pressed.connect(callback)
             def callback():
-                self.sph_demo.params.render_mode = FluidRenderer.RENDERMODE_ADVANCED
+                self.sph_demo.params.render_mode = 2
             ui.rm_advanced.pressed.connect(callback)
             ui.rm_advanced.toggled.connect(ui.advanced.setEnabled)
 

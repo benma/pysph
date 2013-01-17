@@ -152,10 +152,10 @@ if __name__ == '__main__':
     from time import time
     t = time()
     s.sort_in_place(d_keys, d_vals, N, 1)
-    print "%ims" % ((time()-t)*1000)
+    print("%ims" % ((time()-t)*1000))
 
     cl.enqueue_copy(queue, keys, d_keys)
     cl.enqueue_copy(queue, vals, d_vals)
     queue.finish()
-    print np.linalg.norm(keys-sorted_keys)
-    print np.linalg.norm(vals-sorted_vals)
+    print(np.linalg.norm(keys-sorted_keys))
+    print(np.linalg.norm(vals-sorted_vals))

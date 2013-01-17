@@ -26,9 +26,9 @@ class RadixSort(object):
             self.radix_prg = cl.Program(self.ctx, f.read()).build()
 
         if (max_elements % (cta_size * 4)) == 0:
-            num_blocks = max_elements / (cta_size * 4)
+            num_blocks = max_elements // (cta_size * 4)
         else:
-            num_blocks = max_elements / (cta_size * 4) + 1
+            num_blocks = max_elements // (cta_size * 4) + 1
 
         self.d_temp_keys = cl.Buffer(self.ctx, mf.READ_WRITE, size=self.dtype_size * max_elements)
         self.d_temp_values = cl.Buffer(self.ctx, mf.READ_WRITE, size=self.dtype_size * max_elements)
@@ -37,10 +37,10 @@ class RadixSort(object):
         self.d_counters_sum = cl.Buffer(self.ctx, mf.READ_WRITE, size=self.dtype_size * self.WARP_SIZE * num_blocks)
         self.d_block_offsets = cl.Buffer(self.ctx, mf.READ_WRITE, size=self.dtype_size * self.WARP_SIZE * num_blocks)
 
-        numscan = max_elements/2/cta_size*16
+        numscan = max_elements//2//cta_size*16
         if numscan >= self.MIN_LARGE_ARRAY_SIZE:
             #MAX_WORKGROUP_INCLUSIVE_SCAN_SIZE 1024
-            self.scan_buffer = cl.Buffer(self.ctx, mf.READ_WRITE, size = self.dtype_size * numscan / 1024)
+            self.scan_buffer = cl.Buffer(self.ctx, mf.READ_WRITE, size = self.dtype_size * numscan // 1024)
 
     def sort(self, d_key, d_val, N):
         key_bits = self.dtype_size * 8
@@ -57,7 +57,7 @@ class RadixSort(object):
         self.find_offsets(startbit, num)
         self.queue.finish()
 
-        array_length = num/2/self.cta_size*16
+        array_length = num//2//self.cta_size*16
         if array_length < self.MIN_LARGE_ARRAY_SIZE:
             self.naive_scan(num)
         else:
@@ -69,7 +69,7 @@ class RadixSort(object):
 
 
     def blocks(self, d_key, d_val, nbits, startbit, num):
-        totalBlocks = num/4/self.cta_size
+        totalBlocks = num//4//self.cta_size
         global_size = (self.cta_size*totalBlocks,)
         local_size = (self.cta_size,)
         blocks_args = (d_key,
@@ -87,7 +87,7 @@ class RadixSort(object):
 
 
     def find_offsets(self, startbit, num):
-        totalBlocks = num/2/self.cta_size
+        totalBlocks = num//2//self.cta_size
         global_size = (self.cta_size*totalBlocks,)
         local_size = (self.cta_size,)
         offsets_args = (self.d_temp_keys,
@@ -103,10 +103,10 @@ class RadixSort(object):
 
 
     def naive_scan(self, num):
-        nhist = num/2/self.cta_size*16
+        nhist = num//2//self.cta_size*16
         global_size = (nhist,)
         local_size = (nhist,)
-        extra_space = nhist / 16 #NUM_BANKS defined as 16 in RadixSort.cpp
+        extra_space = nhist // 16 #NUM_BANKS defined as 16 in RadixSort.cpp
         shared_mem_size = self.dtype_size * (nhist + extra_space)
         scan_args = (self.d_counters_sum,
                      self.d_counters,
@@ -119,21 +119,21 @@ class RadixSort(object):
     def scan(self, dst, src, batch_size, array_length):
         self.scan_local1(dst, 
                          src, 
-                         batch_size * array_length / (4 * self.WORKGROUP_SIZE),
+                         batch_size * array_length // (4 * self.WORKGROUP_SIZE),
                          4 * self.WORKGROUP_SIZE)
         self.queue.finish()
         self.scan_local2(dst, 
                          src, 
                          batch_size,
-                         array_length / (4 * self.WORKGROUP_SIZE)
+                         array_length // (4 * self.WORKGROUP_SIZE)
             )
         self.queue.finish()
-        self.scan_update(dst, batch_size * array_length / (4 * self.WORKGROUP_SIZE))
+        self.scan_update(dst, batch_size * array_length // (4 * self.WORKGROUP_SIZE))
         self.queue.finish()
 
     
     def scan_local1(self, dst, src, n, size):
-        global_size = (n * size / 4,)
+        global_size = (n * size // 4,)
         local_size = (self.WORKGROUP_SIZE,)
         scan_args = (dst,
                      src,
@@ -170,7 +170,7 @@ class RadixSort(object):
         self.scan_prg.uniformUpdate(self.queue, global_size, local_size, *scan_args)
 
     def reorder(self, d_key, d_val, startbit, num):
-        totalBlocks = num/2/self.cta_size
+        totalBlocks = num//2//self.cta_size
         global_size = (self.cta_size*totalBlocks,)
         local_size = (self.cta_size,)
         reorder_args = (d_key,
@@ -209,11 +209,11 @@ if __name__ == '__main__':
     from time import time
     t = time()
     s.sort(d_keys, d_vals, N)
-    print "%is" % ((time()-t)*1000)
+    print("%is" % ((time()-t)*1000))
 
     cl.enqueue_copy(queue, keys, d_keys)
     cl.enqueue_copy(queue, vals, d_vals)
     queue.finish()
     
-    print np.linalg.norm(keys-sorted_keys)
-    print np.linalg.norm(vals-sorted_vals)
+    print(np.linalg.norm(keys-sorted_keys))
+    print(np.linalg.norm(vals-sorted_vals))

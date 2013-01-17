@@ -5,7 +5,7 @@ from math import log, ceil
 
 import numpy as np
 
-from radix_sort import RadixSort
+from .radix_sort import RadixSort
 
 class FluidSimulator(object):
     def __init__(self, N, boxsize=(10,10,10), gl_interop=False):
@@ -50,7 +50,7 @@ class FluidSimulator(object):
         self.mass = self.spacing0**3 * self.density0
 
         # for grid based neighbour search
-        self.number_of_cells = tuple(map(lambda boxsize: int(ceil(boxsize/self.h)), self.boxsize)); # 1h is support of kernel
+        self.number_of_cells = tuple([int(ceil(boxsize/self.h)) for boxsize in self.boxsize]); # 1h is support of kernel
         self.total_number_of_cells = self.number_of_cells[0] * self.number_of_cells[1] * self.number_of_cells[2]
 
         # initialize positions on the cpu and later move them to the gpu
@@ -71,9 +71,9 @@ class FluidSimulator(object):
 
         self.initialize_positions()
 
-        print '%i particles' % self.N
-        print 'initial density: %s, mass: %s, gas constant k: %s, timestep: %s' % (self.density0, self.mass, self.k, self.dt)
-        print '%s %s cells' % (self.number_of_cells, self.total_number_of_cells)
+        print('%i particles' % self.N)
+        print('initial density: %s, mass: %s, gas constant k: %s, timestep: %s' % (self.density0, self.mass, self.k, self.dt))
+        print('%s %s cells' % (self.number_of_cells, self.total_number_of_cells))
 
     def initialize_positions(self):
         """
@@ -87,27 +87,27 @@ class FluidSimulator(object):
         # arrange particles in one large and two small cubes
         # (N needs to be a cubic number)
         n = int((self.N/1.25)**(1/3.)+0.5)
-        for x in xrange(n):
-            for y in xrange(n):
-                for z in xrange(n):
+        for x in range(n):
+            for y in range(n):
+                for z in range(n):
                     position[i, 0] = (x + 0.5) * spacing0
                     position[i, 1] = (y + 0.5) * spacing0 + 0.01*self.boxsize[1]
                     position[i, 2] = self.boxsize[2] - (z + 0.5) * spacing0
                     position[i, 3] = 0
                     i += 1
 
-        for x in xrange(n//2):
-            for y in xrange(n//2):
-                for z in xrange(n//2):
+        for x in range(n//2):
+            for y in range(n//2):
+                for z in range(n//2):
                     position[i, 0] = (x + 0.5) * spacing0 + 0.01*self.boxsize[0]
                     position[i, 1] = self.boxsize[1] - (y + 0.5) * spacing0 
                     position[i, 2] = self.boxsize[2] - (z + 0.5) * spacing0
                     position[i, 3] = 0
                     i += 1
 
-        for x in xrange(n//2):
-            for y in xrange(n//2):
-                for z in xrange(n//2):
+        for x in range(n//2):
+            for y in range(n//2):
+                for z in range(n//2):
                     position[i, 0] = self.boxsize[0] - (x + 0.5) * spacing0
                     position[i, 1] = (y + 0.5) * spacing0 + 0.15*self.boxsize[1]
                     position[i, 2] = (z + 0.5) * spacing0
@@ -156,11 +156,11 @@ class FluidSimulator(object):
             self.position_vbo.unbind()
         else:
             self.cl_init_context()
-        
         # load opencl code
         cur_dir = os.path.dirname(os.path.abspath(__file__))
+        from mako.template import Template
         with open('%s/sph.cl' % cur_dir) as f:
-            from mako.template import Template
+
             code = str(Template(f.read()).render(
                 # constant parameters, replaced in code before
                 # it is compiled
@@ -357,11 +357,11 @@ if __name__ == '__main__':
     fluid_simulator.cl_init()
     track_particle = 123
     position = fluid_simulator.get_position()
-    print 'position of particle %i before simulation: %s' % (track_particle, position[track_particle,0:3])
+    print('position of particle %i before simulation: %s' % (track_particle, position[track_particle,0:3]))
     
     # do 100 simulation steps
-    for i in xrange(100):
+    for i in range(100):
         fluid_simulator.step()
     
     position = fluid_simulator.get_position()
-    print 'position of particle %i after simulation: %s' % (track_particle, position[track_particle,0:3])
+    print('position of particle %i after simulation: %s' % (track_particle, position[track_particle,0:3]))

@@ -2,7 +2,7 @@ from cg import CGDefaultShader
 import os
 
 class BlurShader(CGDefaultShader):
-    VERTICAL, HORIZONTAL = range(2)
+    VERTICAL, HORIZONTAL = list(range(2))
 
     def __init__(self, size=(800,800), radius=10, sigma=3):
         self.width, self.height = size

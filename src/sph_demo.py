@@ -25,7 +25,7 @@ class SPHDemo(base_demo.BaseDemo):
     def glinit(self):
         super(SPHDemo, self).glinit()
 
-        # fluid simulator needs vertex buffer objects, this is why this needs to be initialized here
+        # fluid simulator needs vertex buffer objects, this is why this needs to be initialized here    
         self.fluid_simulator.cl_init()
         if self.enable_advanced_rendering:
             from fluid_rendering.fluid_renderer import FluidRenderer
@@ -34,7 +34,7 @@ class SPHDemo(base_demo.BaseDemo):
         class Params(object):
             def __init__(self, **kwargs):
                 self.dirty = False
-                for param, initial_value in kwargs.iteritems():
+                for param, initial_value in kwargs.items():
                     setattr(self, param, initial_value)
             
             @property
@@ -141,7 +141,7 @@ class SPHDemo(base_demo.BaseDemo):
             # TODO: since this number is rounded, it is not entirely accurate.
             # improve with the method explained here: http://gafferongames.com/game-physics/fix-your-timestep/
 
-            for i in xrange(int(1/(self.framerate*self.fluid_simulator.dt))):
+            for i in range(int(1/(self.framerate*self.fluid_simulator.dt))):
                self.fluid_simulator.step()
             #self.fluid_simulator.step()
 

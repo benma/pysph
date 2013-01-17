@@ -4,13 +4,14 @@ Quick and easy wrappers to create vertex/fragment shaders.
 import sys
 from ctypes import *
 
-from cg import *
-from cg_gl import *
+from .cg import *
+from .cg_gl import *
 
-from platform import cg_platform as cg, cg_gl_platform as cg_gl
+from .platform import cg_platform as cg, cg_gl_platform as cg_gl
 
 cg_gl.cgGLSetDebugMode(CG_FALSE)
 cg.cgCreateProgram.restype = CGprogram
+cg.cgCombinePrograms2.restype = CGprogram
 cg.cgGetParameterName.restype = c_char_p
 cg.cgGetProfileString.restype = c_char_p
 cg.cgGetLastErrorString.restype = c_char_p
@@ -61,7 +62,7 @@ def create_profile(shader_type):
         # this will never return glsl
         profile = cg_gl.cgGLGetLatestProfile(shader_type)
 
-    print "profile: ", cg.cgGetProfileString(profile)
+    print("profile: ", cg.cgGetProfileString(profile))
     cg_gl.cgGLSetOptimalOptions(profile)
     check_for_cg_error(context, "selecting profile")
 
@@ -93,20 +94,17 @@ class _CGShader(object):
     def __init__(self, code, entry=None):
         # for now: vertex and fragment shader in same source
         assert self.vertex ^ self.fragment, "Use one of CGVertexShader, CGFragmentShader or CGVertexFragmentShader."
-        
         self.entry = entry or self.default_entry
         self.context = _create_context()
         self.profile = create_profile(CG_GL_VERTEX if self.vertex else CG_GL_FRAGMENT)
-
         program = cg.cgCreateProgram(
             self.context, # Cg runtime context
             CG_SOURCE, # Program in human-readable form
-            code, # string of source code
+            code.encode('ascii'), # string of source code
             self.profile, # Profile: OpenGL ARB vertex program
-            entry,  # Entry function name
+            entry.encode('ascii'),  # Entry function name
             None # No extra compiler options
             )
-        
         self.error_prefix = '%s shader, entry = %s' % ("vertex" if self.vertex else "fragment", entry)
 
         self.check_error("creating program from string")
@@ -192,7 +190,7 @@ class CGVertexFragmentShader(object):
         cg_gl.cgGLUnbindProgram(self.fragment_profile)
 
     def get_parameter(self, name):
-        p = cg.cgGetNamedParameter(self.program, name)
+        p = cg.cgGetNamedParameter(self.program, name.encode('ascii'))
         self.check_error("could not get %r parameter" % name)
         return CGParameter(name, p)
 
